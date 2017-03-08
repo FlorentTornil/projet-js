@@ -23,7 +23,9 @@ var peutBouger = true; 		// vrai ssi le joueur est en train de tirer (touche enf
 var chaineTriche = ""; 		// variable contenant les caractères que nous saississons au clavier
 var aTricher = false; 		// au début du jeu, le joueur n'a pas triché
 
-var lancer;					// variable correspondant à l'intervalle de déplacement du ballon 
+var lancer;			//variable de setInterval qui va servir à l'arreter
+var oldX;
+var oldY;			//les anciennes positions du ballon, qui va servir au calcul de vecteurs pour les rebonds
 
 // fonction d'initialisation du jeu
 function setup() {
@@ -100,7 +102,7 @@ function setup() {
     ballon = document.getElementById('ballon');
 
     // on redimensionne le ballon
-    ballon.style.width = "40px";
+    ballon.style.width = "33px";
 
     // on positionne le ballon en absolu afin de pouvoir si besoin est, modifier sa position avec les propriétés CSS "top" et "left"
     ballon.style.position = "absolute";
@@ -112,8 +114,8 @@ function setup() {
     joueur.style.left = (fond.width / 2) - 50 + "px"; // au centre
     joueur.style.top = (2/3) * fond.height -25 + "px"; // a 2/3 du bas de l'image = au centre
 	
-	ballon.style.left = (fond.width / 2) +5 + "px"; // au centre
-    ballon.style.top = (2/3) * fond.height + 25 + "px"; // a 2/3 du bas de l'image = au centre*/
+	ballon.style.left = (fond.width / 2) +9 + "px"; // au centre
+    ballon.style.top = (2/3) * fond.height + 29 + "px"; // a 2/3 du bas de l'image = au centre*/
     
     //
 	//	Informations
@@ -300,7 +302,7 @@ function relacher(event, debut) {
 		if(peutBouger) {
 
 			// on lance réelement le tir, en passsant en argument la durée ( en ms ) durant laquelle la touche w est restée enfoncée
-			tir(fin-debut);
+			tir(fin-debut,1,1);
 		}	
 	}
 }
@@ -658,71 +660,73 @@ function effacerAlerteTriche() {
 }
 
 // fonction permettant de tirer le ballon
-function tir(force){
-
-	// on empeche le joueur de bouger pendant le tir
+function tir(force, coefX, coefY){//fonction lancé dès que la touche tir est relaché
 	peutBouger = false;
-
-	// on limite également la force maximale du tir
     if(force > 2500){
 		force = 2500;
 	}
 
-	// on crée un intervalle qui va déplacer le ballon toutes les 75ms
 	var attraction = 1;
-	lancer = setInterval(function() {attraction += 2 ;intervalle(force, attraction);arret()}, 75);    
+	lancer = setInterval(function() {attraction += 1 ;intervalle(force, attraction, coefX, coefY);limite(force)}, 37);
 }
 
-// fonction appelle pour déplacer le ballon lors d'un tir
-function intervalle(force, attraction){
+function intervalle(force, attraction, coefX, coefY){// fonction qui a chaque intervalle de temps bouge le ballon.
 
-	// on bouge le ballon en X et en Y selon une formule mathématique secrète
-    ballon.style.top = getImageY(ballon) - (8+(force*0.024)) + attraction + "px";
-    ballon.style.left = getImageX(ballon) + (6+(force*0.0047)) + "px";
-    
-	// on vérifie également si le ballon est dans le panier
+    oldX = getImageX(ballon);
+    oldY = getImageY(ballon);
+    ballon.style.top = getImageY(ballon) - ((4+(force*0.015))*coefY) + attraction + "px";
+    ballon.style.left = getImageX(ballon) + ((3+(force*0.0030))*coefX) + "px";
+
     faitPanier();
+
 }
 
-// fonction permettant d'arreter le tir
-function arret(force){
+function arret(){
 
-	// on récupère les coordonnées du panier
 	var panierX = 4*fond.width/5 + 10;
 	var panierY = 2*fond.height/5;
-	
-	// si on force l'arret via l'argument, ou que le ballon a dépassé le panier
-    if(force || getImageX(ballon) > panierX+100 || getImageY(ballon) > getImageY(joueur)+100 ) {
-		
-		// on arrete de déplacer le ballon
-		clearInterval(lancer);
-			
-		// on repositionne le joueur et le ballon à leurs positions initiales
-		joueur.style.left = (fond.width / 2) - 50 + "px";
-		joueur.style.top = (2/3) * fond.height -25 + "px";
-		
-		ballon.style.left = (fond.width / 2) +5 + "px";
-		ballon.style.top = (2/3) * fond.height + 25 + "px";
-		
-		// on remet les 50 déplacements possibles
-		information.nbDeplacement = 50;
 
-		// si le joueur doit perdre une vie
-		// c'est à dire s'il n'a pas marqué de points
-		// il per une vie
+    if(getImageX(ballon) > panierX+100 || getImageY(ballon) > getImageY(joueur)+100 ) {
+
+		joueur.style.left = (fond.width / 2) - 50 + "px"; // au centre
+		joueur.style.top = (2/3) * fond.height -25 + "px"; // a 2/3 du bas de l'image = au centre
+
+		ballon.style.left = (fond.width / 2) +5 + "px"; // au centre
+		ballon.style.top = (2/3) * fond.height + 25 + "px"; // a 2/3 du bas de l'image = au centre*/
+
+		information.nbDeplacement = 50;
 		if(perdUneVie) {
 			PerteVie();
 		}
-
-		// on réinitialise les variables
 		perdUneVie = true;
 		peutBouger = true;
-
-		// s'il reste des vies, on refait le setup
-		if(information.nbVie>0) {
-			setup(); 	
-	    }
+		setup();
     }
+}
+
+function limite(force){
+
+  var directionX = (getImageX(ballon)-oldX)/Math.abs(getImageX(ballon)-oldX);
+  var directionY = (getImageY(ballon)-oldY)/Math.abs(getImageY(ballon)-oldY);
+
+  if(getImageY(ballon) > fond.height*(80/100)){
+    console.log(getImageX(ballon));
+    console.log(oldX);
+    console.log(directionX);
+    rebond(force,directionX,1);
+  }
+}
+
+function rebond(force,coefX, coefY){
+
+  clearInterval(lancer);
+  force = (force*(4/5))-force*0.1;
+  if(force > 5){
+    tir(force,coefX,coefY);
+  }
+  else{
+    arret();
+  }
 }
 
 // fonction constructeur d'un objet information
