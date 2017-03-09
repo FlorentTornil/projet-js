@@ -30,6 +30,8 @@ var lancer;					// variable correspondant à l'intervalle de déplacement du bal
 var oldX;
 var oldY;
 
+var rebondPlanche = true; // va servir a ce que le ballon ne s'enferme pas dans la planche.
+
 
 // fonction d'initialisation du jeu
 function setup() {
@@ -508,17 +510,13 @@ function faitPanier() {
 	// on regarde si le ballon est proche du panier 
 	if (panierX < positionXballon + 20 && positionXballon - 20 < panierX + 50 && panierY < positionYballon + 20  && positionYballon - 20 < panierY + 10) {
 
-		// si le joueur est loin, il marque 1 point de plus
-		if(getImageX(joueur) < fond.width/3) {
-			information.score++;
-		}
 		
 		// on joue un son de victoire
 		son.src = "win.mp3";
 		son.removeAttribute("loop");
 
 		// cf informations()
-		information.score ++;
+		information.score += Math.round(((panierX - getImageX(joueur))*(panierX - getImageX(joueur)))/200);
 		information.afficher();
 		information.bouger();
 
@@ -709,7 +707,7 @@ function effacerAlerteTriche() {
 	document.addEventListener("keydown", traiterAppuieTouche);
 }
 
-// fonction permettant de tirer le ballon
+//effectue un tir
 function tir(force, coefX, coefY){
 
 	// on empeche le joueur de bouger pendant le tir
@@ -723,21 +721,21 @@ function tir(force, coefX, coefY){
 	// on crée un intervalle qui va déplacer le ballon toutes les 75ms
 	var attraction = 1;
 	lancer = setInterval(function() {
-		attraction += 1 ;
+		attraction += 0.5 ;
 		intervalle(force, attraction, coefX, coefY);
-		limite(force)}, 37);    
+		limite(force)}, 20);
 }
 
 // fonction appelle pour déplacer le ballon lors d'un tir
 function intervalle(force, attraction, coefX, coefY){
-	
+
 	oldX = getImageX(ballon);
 	oldY = getImageY(ballon);
 
 	// on bouge le ballon en X et en Y selon une formule mathématique secrète
-	ballon.style.top = getImageY(ballon) - ((4+(force*0.015))*coefY) + attraction + "px";
-    ballon.style.left = getImageX(ballon) + ((3+(force*0.0030))*coefX) + "px";
-    
+	ballon.style.top = getImageY(ballon) - ((5+(force*0.010))*coefY) + attraction + "px";
+  ballon.style.left = getImageX(ballon) + ((2+(force*0.004))*coefX) + "px";
+
 	// on vérifie également si le ballon est dans le panier
     faitPanier();
 }
@@ -748,28 +746,28 @@ function arret(force){
 	// on récupère les coordonnées du panier
 	var panierX = 4*fond.width/5 + 10;
 	var panierY = 2*fond.height/5;
-	
+
 	// si on force l'arret via l'argument, ou que le ballon a dépassé le panier
     if(force || getImageX(ballon) > panierX+100 || getImageY(ballon) > getImageY(joueur)+100 ) {
-			
+
 		// on repositionne le joueur et le ballon à leurs positions initiales
 		joueur.style.left = (fond.width / 2) - 50 + "px";
 		joueur.style.top = (2/3) * fond.height -25 + "px";
-	
-		ballon.style.left = (fond.width / 2) + 9 + "px";
-		ballon.style.top = (2/3) * fond.height + 29 + "px";
-		
+
+		ballon.style.left = (fond.width / 2) +5 + "px";
+		ballon.style.top = (2/3) * fond.height + 25 + "px";
+
 		// on remet les 50 déplacements possibles
 		information.nbDeplacement = 50;
 
 		// si le joueur doit perdre une vie
 		// c'est à dire s'il n'a pas marqué de points
-		// il perd une vie
-		
+		// il per une vie
+
 		if(force) {
 			clearInterval(lancer);
 		}
-		
+
 		if(perdUneVie) {
 			PerteVie();
 		}
@@ -779,9 +777,8 @@ function arret(force){
 		peutBouger = true;
 
 		// s'il reste des vies, on refait le setup
-		if(information.nbVie > 0) {
-			document.removeEventListener("keydown", traiterAppuieTouche);
-			setTimeout(setup ,2000);	
+		if(information.nbVie>0) {
+			setup();
 	    }
     }
 }
@@ -790,12 +787,41 @@ function arret(force){
 function limite(force){
 
 	// formule secrète de rebond
-	var directionX = (getImageX(ballon)-oldX)/Math.abs(getImageX(ballon)-oldX);
-	var directionY = (getImageY(ballon)-oldY)/Math.abs(getImageY(ballon)-oldY);
+	var directionX = (getImageX(ballon)-oldX)/Math.abs(getImageX(ballon)-oldX);//1 si il veut va vers la gauche, -1 vers la droite.
+	var directionY = (-(getImageY(ballon)-oldY))/Math.abs(getImageY(ballon)-oldY);//1 si il monte, -1 sinon.
+  var panierX = 4*fond.width/5 + 10;
+	var panierY = 2*fond.height/5;
 
 	// rebond au sol
 	if(getImageY(ballon) > fond.height*(80/100)){
 		rebond(force,directionX,1);
+	}//rebond coté droit de l'écran
+  else if(getImageX(ballon) > fond.width*(96.8/100)){
+    rebond(force,-1,directionY);
+  }//rebond coté gauche de l'écran
+  else if(getImageX(ballon) < 0){
+    rebond(force,1,directionY);
+  }//rebond sur le panneau
+  else if(getImageX(ballon) > fond.width*(82/100) && getImageX(ballon) < fond.width*(89/100) && getImageY(ballon) > fond.height*(14/100) &&  getImageY(ballon) < fond.height*(42/100) && rebondPlanche == true){
+		rebondPlanche = false;
+		var chrono = setInterval(function(){rebondPlanche = true;console.log(rebondPlanche);clearInterval(chrono)},500);
+		var difY = (Math.min(Math.abs(getImageY(ballon)-fond.height*(14/100)),Math.abs(getImageY(ballon)-fond.height*(42/100))))
+		var difX = (Math.min(Math.abs(getImageX(ballon)-fond.width*(82/100)),Math.abs(getImageX(ballon)-fond.width*(89/100))));
+    if(difX < difY){
+      rebond(force,directionX*(-1),directionY);
+    }
+    else{
+      rebond(force,directionX,directionY*(-1));
+    }
+  }
+	//rebond sous l'arceau
+  else if(getImageY(ballon)  - 20 > panierY + 12 && getImageY(ballon) - 20 < panierY + 25 && panierX < getImageX(ballon) + 20 && getImageX(ballon) - 70 < panierX){
+    rebond(force,directionX,-1);
+  }
+	//rebond a gauche de l'arceau
+
+	else if(panierX > getImageX(ballon) +21 && getImageX(ballon) + 30 > panierX &&  panierY < getImageY(ballon) + 40 && getImageY(ballon) -25 < panierY ){
+		rebond(force,-1,directionY);
 	}
 }
 
@@ -804,15 +830,14 @@ function rebond(force,coefX, coefY){
 
 	// on arrete le tir
 	clearInterval(lancer);
-	
+
 	// on calcule une nouvelle force
-	force = (force*(4/5))-force*0.1;
-	
+	force = (force*(3.5/5) - 10);
+
 	// si le ballon n'est pas a un arret quasi total il rebondi
-	if(force > 5){
+	if(force > 8){
 		tir(force,coefX,coefY);
 	}
-	
 	// sinon on l'arrete
 	else{
 		arret();
