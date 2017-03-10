@@ -22,7 +22,7 @@ var enCoursDeTir = false; 	// vrai ssi le joueur est en train de tirer (touche e
 var peutBouger = true; 		// vrai ssi le joueur est en train de tirer (touche enfoncée)
 
 var chaineTriche = ""; 		// variable contenant les caractères que nous saississons au clavier
-var aTricher = false; 		// au début du jeu, le joueur n'a pas triché
+var aTricher; 			// au début du jeu, le joueur n'a pas triché
 
 var lancer;					// variable correspondant à l'intervalle de déplacement du ballon 
 
@@ -200,13 +200,15 @@ function setup() {
 	//
 	//	div de triche
 	//
+
+	aTricher = false;
 	
 	tricheur = document.getElementById('triche');
 
 	tricheur.style.position = "absolute"; 
-    tricheur.style.width = "500px"; 
-    tricheur.style.height = "50px"; 
-    tricheur.style.fontWeight="bold"; 
+    	tricheur.style.width = "500px"; 
+    	tricheur.style.height = "50px"; 
+   	tricheur.style.fontWeight="bold"; 
     
 	tricheur.style.left = fond.width/2 -250 + "px";
 	tricheur.style.top = fond.height/2 - 100 + "px";
@@ -670,8 +672,8 @@ function triche(event) {
 			son.src = "excellent.mp3";
 			son.removeAttribute("loop");
 
-			// on augmete quand même le score de 10 points parce que c'est pas si mal que ca de tricher
-			information.score += 10;
+			// on augmete quand même le score de 1000 points parce que c'est pas si mal que ca de tricher
+			information.score += 2000;
 			
 
 			// on indique que le joueur a déjà triché, car il ne faut pas tricher deux fois
