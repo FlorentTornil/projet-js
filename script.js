@@ -200,8 +200,9 @@ function setup() {
 	//
 	//	div de triche
 	//
-
-	aTricher = false;
+	if(afficherEcranAccueil) {
+		aTricher = false;
+	}
 	
 	tricheur = document.getElementById('triche');
 
